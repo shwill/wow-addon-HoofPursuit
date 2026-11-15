@@ -191,7 +191,7 @@ f:SetScript("OnUpdate", function(_, dt)
     local q = p * p
     local sy = 1 - 0.92 * q
     shape(1 - 0.18 * q, sy)
-    lift = -db.size * (1 - sy) / 2
+    lift = -db.size * (1 - sy) / 2 + db.size * 0.15 * p
     vis = min(vis, 1 - p)
     tipped = true
     if p >= 1 then tip = nil end
