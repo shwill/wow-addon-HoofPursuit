@@ -32,6 +32,7 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 ## Caveats
 
 - Tauren only. On any other race, the addon does nothing and disables itself for that character (re-enable it in the AddOn list).
+- In combat, the game hides the buff and your speed from addons. The gauge turns gray and freezes at the last value. Every hit you take knocks off an estimated 4 stacks, and if that reaches 0 it shatters. After combat it snaps back to the real value.
 - Settings are saved per character.
 
 ## Install

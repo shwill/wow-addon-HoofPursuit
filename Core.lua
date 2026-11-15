@@ -2,6 +2,7 @@ local ADDON, ns = ...
 
 local AURA = 1299038
 local MAX = 30
+local HIT = 4
 local BASE = 7
 local MEDIA = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 local CAL = { -119.5, -78, -42.5, 0, 42.5, 78.25, 120 }
@@ -12,7 +13,7 @@ local sin, rad, min, max, random = math.sin, math.rad, math.min, math.max, math.
 local defaults = { point = "CENTER", x = 0, y = -180, size = 200, locked = false, mode = "auto", sound = true }
 
 local db
-local stacks, speed, moving = 0, 0, false
+local stacks, speed, moving, blind, gray = 0, 0, false, false, 0
 local ang, vel, t, idle, vis, on, drop, landed, ticked = CAL[1], 0, 0, 0, 0, false, nil, false, 0
 local shown, nextStep, jolt, test = 0, 0, 0, 0
 
@@ -103,9 +104,10 @@ local function readAura()
     else stacks = max(0, 24 - math.floor((e - 8.5) * 4)) end
     return
   end
+  blind = InCombatLockdown()
   local a = C_UnitAuras.GetPlayerAuraBySpellID(AURA)
   if not a then
-    stacks = 0
+    if not blind then stacks = 0 end
   elseif not issecretvalue(a.applications) then
     stacks = max(a.applications or 1, 1)
   end
@@ -119,8 +121,7 @@ local function readSpeed()
   end
   local cur = GetUnitSpeed("player")
   if issecretvalue(cur) then
-    moving = stacks > 0
-    speed = moving and BASE * (1 + stacks * 0.02) or 0
+    moving, speed = false, 0
   else
     speed = cur or 0
     moving = speed > 0.1
@@ -224,7 +225,7 @@ f:SetScript("OnUpdate", function(_, dt)
   elseif db.mode == "on" then
     setOn(true)
   else
-    if stacks > 0 or moving then idle = 0 else idle = idle + dt end
+    if stacks > 0 or moving or blind then idle = 0 else idle = idle + dt end
     if not on and stacks > 0 then setOn(true) elseif on and idle > 4 then setOn(false) end
   end
   local e = drop and t - drop
@@ -254,6 +255,12 @@ f:SetScript("OnUpdate", function(_, dt)
     vis = min(1, vis + dt * 3.5)
   end
   body:SetScale(k)
+  local want = blind and 0.75 or 0
+  if gray ~= want then
+    gray = want > gray and min(want, gray + dt * 3) or max(want, gray - dt * 1.5)
+    dial:SetDesaturation(gray)
+    needle:SetDesaturation(gray)
+  end
   if burst then
     local b = t - burst
     if b > BREAK then
@@ -310,6 +317,13 @@ f:SetScript("OnUpdate", function(_, dt)
   else
     glow:SetAlpha(max(0, glow:GetAlpha() - dt * 2))
   end
+end)
+
+f:SetScript("OnEvent", function(_, _, unit, kind)
+  if unit ~= "player" or not blind or issecretvalue(kind) or kind ~= "WOUND" then return end
+  stacks = max(0, stacks - HIT)
+  jolt = 1.4
+  if stacks == 0 and on and db.mode == "auto" then setOn(false) end
 end)
 
 f:SetScript("OnDragStart", function(s)
@@ -385,6 +399,7 @@ ev:SetScript("OnEvent", function(_, e, arg)
     end
     SLASH_PLAINSTACHO1 = "/tacho"
     SlashCmdList.PLAINSTACHO = slash
+    f:RegisterUnitEvent("UNIT_COMBAT", "player")
     layout()
     apply()
   end
