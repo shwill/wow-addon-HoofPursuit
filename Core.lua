@@ -13,7 +13,7 @@ local defaults = { point = "CENTER", x = 0, y = -180, size = 200, locked = false
 
 local db
 local stacks, speed, moving = 0, 0, false
-local ang, vel, t, idle, vis, on, ign, ticked = CAL[1], 0, 0, 0, 0, false, nil, 0
+local ang, vel, t, idle, vis, on, drop, landed, ticked = CAL[1], 0, 0, 0, 0, false, nil, false, 0
 local shown, nextStep, jolt, test = 0, 0, 0, 0
 
 local f = CreateFrame("Frame", "PlainsTachoFrame", UIParent)
@@ -117,24 +117,15 @@ local function clock(dir)
   click()
 end
 
-local IGN = 2
-local function rev(e)
-  if e < 0.25 then return 0 end
-  if e < 0.7 then return sin((e - 0.25) / 0.45 * math.pi) * 0.45 end
-  if e < 0.75 then return 0 end
-  if e < 1.05 then local x = (e - 0.75) / 0.3 return 1 - (1 - x) * (1 - x) end
-  if e < 1.35 then return 1 end
-  if e < 1.95 then local x = (e - 1.35) / 0.6 return 1 - x * x end
-  return 0
-end
+local DROP, BIG = 0.3, 2.6
 
 local function setOn(v)
   if v == on then return end
   on = v
   if v then
-    ign, shown, idle = t, 0, 0
+    drop, landed, shown, idle = t, false, 0, 0
   else
-    ign = nil
+    drop = nil
   end
   f:EnableMouse(v and not db.locked)
 end
@@ -160,27 +151,37 @@ f:SetScript("OnUpdate", function(_, dt)
     if stacks > 0 or moving then idle = 0 else idle = idle + dt end
     if not on and stacks > 0 then setOn(true) elseif on and idle > 4 then setOn(false) end
   end
-  vis = max(0, min(1, vis + dt * (on and 3.5 or -1.4)))
-  f:SetAlpha(vis)
-
-  local e = ign and t - ign
-  local r = 0
-  if e and e >= IGN then ign, e = nil, nil end
-  if e then
-    r = rev(e)
-    local n = math.floor(r * MAX / 2)
-    if n ~= shown then
-      shown = n
+  local e = drop and t - drop
+  local k, rattle = 1, 0
+  if e and e < DROP then
+    k = BIG - (BIG - 1) * e / DROP
+    vis = e / DROP
+  elseif e then
+    if not landed then
+      landed = true
+      jolt = 1.8
+      vel = vel + 420
       click()
     end
-  elseif shown ~= stacks and t >= nextStep then
+    local x = e - DROP
+    k = 1 - 0.07 * math.exp(-9 * x) * math.cos(28 * x)
+    rattle = math.exp(-8 * x)
+    vis = 1
+    if x > 0.8 then drop = nil end
+  else
+    vis = max(0, min(1, vis + dt * (on and 3.5 or -1.4)))
+  end
+  body:SetScale(k)
+  f:SetAlpha(vis)
+
+  if (not e or landed) and shown ~= stacks and t >= nextStep then
     local dir = stacks > shown and 1 or -1
     shown = shown + dir
     nextStep = t + (dir > 0 and 0.05 or 0.08)
     clock(dir)
   end
 
-  local goal = e and target(r * MAX) or target(shown)
+  local goal = target(shown)
   vel = vel + ((goal - ang) * 380 - vel * 15) * dt
   ang = ang + vel * dt
   jolt = max(0, jolt - dt * 7)
@@ -194,11 +195,11 @@ f:SetScript("OnUpdate", function(_, dt)
   local amp = db.size * 0.012 * heat * heat * (0.6 + rush * 0.4)
   local bump = (sin(t * 9.5) > 0.85 and 1 or 0) * heat
   local j = jolt * jolt * db.size * 0.012
-  if e then amp = amp + db.size * 0.022 * (0.25 + r) * min(e / 0.2, 1) end
+  amp = amp + db.size * 0.03 * rattle
   local dx = noise(23, 31, 47) * amp + (random() - 0.5) * amp * 0.6 + (random() - 0.5) * j
   local dy = noise(19, 29, 43) * amp + bump * amp * 0.8 + j
   local sway = sin(t * 2.7) * 1.2 * heat + noise(13, 17, 21) * 0.6 * heat
-  if e then sway = sway + (random() - 0.5) * 3 * (0.3 + r) end
+  sway = sway + (random() - 0.5) * 4 * rattle
   body:ClearAllPoints()
   body:SetPoint("CENTER", f, "CENTER", dx, dy)
   dial:SetRotation(rad(sway))
@@ -255,7 +256,7 @@ local function slash(msg)
     test = t + 15
     setOn(false)
     vis = 0
-    say("Probelauf: Zündung, hochlaufen, Treffer, stehenbleiben, ausblenden")
+    say("Probelauf: reinknallen, hochlaufen, Treffer, stehenbleiben, ausblenden")
   else
     say(format("Stacks %d/%d, Tempo %.1f, Modus %s", stacks, MAX, speed, db.mode))
     say("/tacho lock | size <px> | auto | on | off | sound | reset | test")
