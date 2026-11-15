@@ -41,3 +41,5 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 Copy the `HoofPursuit` folder into `World of Warcraft/_forever_/Interface/AddOns/` and restart the game.
 
 Source: https://github.com/shwill/wow-addon-HoofPursuit
+
+License: MIT, see `LICENSE`.
