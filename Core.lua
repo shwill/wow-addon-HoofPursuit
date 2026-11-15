@@ -194,7 +194,7 @@ local function setOn(v)
   if v then
     drop, landed, shown, idle = t, false, 0, 0
     sweep()
-    if db.sound then PlaySoundFile(MEDIA .. "Engine.mp3", "SFX") end
+    if db.sound then PlaySoundFile(MEDIA .. "Engine2.mp3", "SFX") end
   else
     drop = nil
     shatter(ang, 0, 0)
