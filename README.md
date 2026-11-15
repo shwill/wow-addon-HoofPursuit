@@ -26,6 +26,7 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 | `/tacho on` / `/tacho off` | Always show / hide |
 | `/tacho sound` | Turn the click sound on or off |
 | `/tacho test` | 15 s demo: slam in, build up to 30, take a hit, stand still, fade out |
+| `/tacho pop` | Just the animations: slam in, hold 1 s, tip over |
 | `/tacho reset` | Reset position, size and settings |
 
 ## Caveats

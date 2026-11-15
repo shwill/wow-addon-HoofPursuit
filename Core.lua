@@ -123,7 +123,7 @@ local function clock(dir)
 end
 
 local DROP, BIG, TIP = 0.15, 2.6, 0.45
-local tip, tipped
+local tip, tipped, pop
 
 local function setOn(v)
   if v == on then return end
@@ -151,7 +151,11 @@ f:SetScript("OnUpdate", function(_, dt)
   local rush = moving and min(speed / (BASE * 1.6), 1.4) or 0
   local heat = moving and (0.15 + 0.85 * fill) or 0
 
-  if db.mode == "on" then
+  if pop then
+    local p = t - pop
+    setOn(p < 1.2)
+    if p > 1.2 + TIP then pop = nil end
+  elseif db.mode == "on" then
     setOn(true)
   else
     if stacks > 0 or moving then idle = 0 else idle = idle + dt end
@@ -276,6 +280,9 @@ local function slash(msg)
   elseif cmd == "sound" then
     db.sound = not db.sound
     say("Klick-Sound " .. (db.sound and "an" or "aus"))
+  elseif cmd == "pop" then
+    setOn(false)
+    tip, vis, pop = nil, 0, t
   elseif cmd == "test" then
     test = t + 15
     setOn(false)
@@ -283,7 +290,7 @@ local function slash(msg)
     say("Probelauf: reinknallen, hochlaufen, Treffer, stehenbleiben, ausblenden")
   else
     say(format("Stacks %d/%d, Tempo %.1f, Modus %s", stacks, MAX, speed, db.mode))
-    say("/tacho lock | size <px> | auto | on | off | sound | reset | test")
+    say("/tacho lock | size <px> | auto | on | off | sound | reset | test | pop")
   end
 end
 
