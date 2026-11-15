@@ -3,7 +3,7 @@
 A completely unnecessary wooden speedometer for the Tauren racial **Plainsrunning** (Ebenenlaufen).
 While you run, the buff stacks up to 30 times, +2% movement speed per stack (up to +60%). PlainsTacho shows your speed bonus (0-60%) as a needle on a carved wooden dial:
 
-- When the first stack appears, the gauge slams onto the screen: it drops in from "above the camera", shrinking while it fades in, hits its spot with a bounce and the needle jumps from the impact.
+- When the first stack appears, the gauge slams onto the screen: it drops in from "above the camera", shrinking while it fades in, hits its spot with a bounce and the needle jumps from the impact. Then the engine starts with sound: the needle twitches while it cranks and revs when it catches.
 - When you've been standing for a while, it bursts into wooden splinters that tumble off the screen.
 
 - Each new stack makes the needle click forward one notch, with a little overshoot and a click sound.
@@ -24,9 +24,9 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 | `/tacho size <px>` | Gauge size in pixels (80-600, default 200) |
 | `/tacho auto` | Slam in with the first stack, fade out after 4 s without stacks or movement (default) |
 | `/tacho on` / `/tacho off` | Always show / hide |
-| `/tacho sound` | Turn the click sound on or off |
+| `/tacho sound` | Turn all sounds on or off (clicks, engine start, shatter) |
 | `/tacho test` | 15 s demo: slam in, build up to 30, take a hit, stand still, fade out |
-| `/tacho pop` | Just the animations: slam in, hold 1 s, shatter |
+| `/tacho pop` | Just the animations: slam in, engine start, shatter |
 | `/tacho reset` | Reset position, size and settings |
 
 ## Caveats

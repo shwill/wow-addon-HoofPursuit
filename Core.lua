@@ -147,6 +147,14 @@ end
 local DROP, BIG, BREAK = 0.15, 2.6, 1.4
 local burst, pop
 
+local function rev(e)
+  if e < 0.85 then return 0 end
+  if e < 1 then return (e - 0.85) / 0.15 end
+  if e < 1.15 then return 1 end
+  if e < 1.6 then local x = (e - 1.15) / 0.45 return 1 - x * x end
+  return 0
+end
+
 local function shatter(a, ox, oy)
   local s = db.size
   local sc = s / 200
@@ -170,7 +178,7 @@ local function shatter(a, ox, oy)
   bits:Show()
   body:SetAlpha(0)
   jolt = 0
-  click()
+  if db.sound then PlaySoundFile(MEDIA .. "Shatter.mp3", "SFX") end
 end
 
 local function sweep()
@@ -185,6 +193,7 @@ local function setOn(v)
   if v then
     drop, landed, shown, idle = t, false, 0, 0
     sweep()
+    if db.sound then PlaySoundFile(MEDIA .. "Start.mp3", "SFX") end
   else
     drop = nil
     shatter(ang, 0, 0)
@@ -210,8 +219,8 @@ f:SetScript("OnUpdate", function(_, dt)
 
   if pop then
     local p = t - pop
-    setOn(p < 1.2)
-    if p > 1.2 + BREAK then pop = nil end
+    setOn(p < 2)
+    if p > 2 + BREAK then pop = nil end
   elseif db.mode == "on" then
     setOn(true)
   else
@@ -219,7 +228,7 @@ f:SetScript("OnUpdate", function(_, dt)
     if not on and stacks > 0 then setOn(true) elseif on and idle > 4 then setOn(false) end
   end
   local e = drop and t - drop
-  local k, rattle = 1, 0
+  local k, rattle, r, crank = 1, 0, 0, 0
   if e and e < DROP then
     k = BIG - (BIG - 1) * e / DROP
     vis = e / DROP
@@ -238,7 +247,9 @@ f:SetScript("OnUpdate", function(_, dt)
     end
     rattle = math.exp(-9 * x)
     vis = 1
-    if x > 0.9 then drop = nil end
+    r = rev(e)
+    if e > 0.2 and e < 0.8 then crank = math.abs(sin(e * 44)) end
+    if e > 1.7 then drop = nil end
   elseif on then
     vis = min(1, vis + dt * 3.5)
   end
@@ -271,7 +282,7 @@ f:SetScript("OnUpdate", function(_, dt)
     clock(dir)
   end
 
-  local goal = target(shown)
+  local goal = max(target(shown), target(r * 20)) + crank * 3
   vel = vel + ((goal - ang) * 380 - vel * 15) * dt
   ang = ang + vel * dt
   jolt = max(0, jolt - dt * 7)
@@ -285,11 +296,11 @@ f:SetScript("OnUpdate", function(_, dt)
   local amp = db.size * 0.012 * heat * heat * (0.6 + rush * 0.4)
   local bump = (sin(t * 9.5) > 0.85 and 1 or 0) * heat
   local j = jolt * jolt * db.size * 0.012
-  amp = amp + db.size * 0.03 * rattle
+  amp = amp + db.size * (0.03 * rattle + 0.005 * crank + 0.016 * r)
   local dx = noise(23, 31, 47) * amp + (random() - 0.5) * amp * 0.6 + (random() - 0.5) * j
   local dy = noise(19, 29, 43) * amp + bump * amp * 0.8 + j
   local sway = sin(t * 2.7) * 1.2 * heat + noise(13, 17, 21) * 0.6 * heat
-  sway = sway + (random() - 0.5) * 4 * rattle
+  sway = sway + (random() - 0.5) * (4 * rattle + 2.5 * r)
   body:ClearAllPoints()
   body:SetPoint("CENTER", f, "CENTER", dx, dy)
   dial:SetRotation(rad(sway))
