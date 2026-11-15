@@ -4,7 +4,7 @@ A completely unnecessary wooden speedometer for the Tauren racial **Plainsrunnin
 While you run, the buff stacks up to 30 times, +2% movement speed per stack (up to +60%). PlainsTacho shows your speed bonus (0-60%) as a needle on a carved wooden dial:
 
 - When the first stack appears, the gauge slams onto the screen: it drops in from "above the camera", shrinking while it fades in, hits its spot with a bounce and the needle jumps from the impact.
-- When you've been standing for a while, it tips over backwards and disappears.
+- When you've been standing for a while, it bursts into wooden splinters that tumble off the screen.
 
 - Each new stack makes the needle click forward one notch, with a little overshoot and a click sound.
 - Losing stacks makes it click back down: several in quick succession when you get hit, slowly when you stand still.
@@ -26,7 +26,7 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 | `/tacho on` / `/tacho off` | Always show / hide |
 | `/tacho sound` | Turn the click sound on or off |
 | `/tacho test` | 15 s demo: slam in, build up to 30, take a hit, stand still, fade out |
-| `/tacho pop` | Just the animations: slam in, hold 1 s, tip over |
+| `/tacho pop` | Just the animations: slam in, hold 1 s, shatter |
 | `/tacho reset` | Reset position, size and settings |
 
 ## Caveats

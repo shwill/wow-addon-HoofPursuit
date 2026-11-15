@@ -44,23 +44,45 @@ shadow:SetAlpha(0.55)
 local needle = body:CreateTexture(nil, "ARTWORK", nil, 2)
 needle:SetTexture(MEDIA .. "Needle")
 
-local function shape(sx, sy)
-  local s = db.size
-  local w, h = s * sx, s * sy
-  body:SetSize(w, h)
-  dial:SetSize(w, h)
-  needle:SetSize(w * NEEDLE, h * NEEDLE)
-  needle:SetPoint("CENTER", body, "CENTER", 0, 0)
-  shadow:SetSize(w * NEEDLE, h * NEEDLE)
-  shadow:SetPoint("CENTER", body, "CENTER", w * 0.012, -h * 0.02)
-  glow:SetSize(w * 0.5, h * 0.5)
-  glow:SetPoint("CENTER", body, "CENTER", w * 0.29, -h * 0.2)
+local SHARDS = {
+  { 256, -10.5, 7.0 }, { 256, -82.0, 94.5 }, { 256, 40.5, 110.0 }, { 256, 104.5, 9.5 },
+  { 256, 74.0, -85.5 }, { 256, -31.0, -122.5 }, { 256, -103.0, -10.5 }, { 256, 19.0, -202.5 },
+  { 256, -125.0, -158.5 }, { 256, -184.0, -29.0 }, { 256, -184.5, 92.0 }, { 256, -111.5, 170.0 },
+  { 256, 16.0, 199.5 }, { 256, 148.0, 147.5 }, { 256, 197.5, -3.5 }, { 256, 147.5, -137.0 },
+}
+
+local bits = CreateFrame("Frame", nil, f)
+bits:SetAllPoints()
+bits:SetFrameLevel(body:GetFrameLevel() + 5)
+bits:Hide()
+
+local parts = {}
+for i, d in ipairs(SHARDS) do
+  local tx = bits:CreateTexture(nil, "ARTWORK", nil, 1)
+  tx:SetTexture(MEDIA .. "Shard" .. i)
+  parts[i] = { tx = tx, d = d }
+end
+do
+  local tx = bits:CreateTexture(nil, "ARTWORK", nil, 3)
+  tx:SetTexture(MEDIA .. "Needle")
+  parts[#parts + 1] = { tx = tx, needle = true }
 end
 
 local function layout()
   local s = db.size
   f:SetSize(s, s)
-  shape(1, 1)
+  body:SetSize(s, s)
+  dial:SetSize(s, s)
+  needle:SetSize(s * NEEDLE, s * NEEDLE)
+  needle:SetPoint("CENTER", body, "CENTER", 0, 0)
+  shadow:SetSize(s * NEEDLE, s * NEEDLE)
+  shadow:SetPoint("CENTER", body, "CENTER", s * 0.012, -s * 0.02)
+  glow:SetSize(s * 0.5, s * 0.5)
+  glow:SetPoint("CENTER", body, "CENTER", s * 0.29, -s * 0.2)
+  for _, p in ipairs(parts) do
+    local n = p.needle and s * NEEDLE or s * p.d[1] / 512
+    p.tx:SetSize(n, n)
+  end
   f:ClearAllPoints()
   f:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 end
@@ -122,16 +144,51 @@ local function clock(dir)
   click()
 end
 
-local DROP, BIG, TIP = 0.15, 2.6, 0.45
-local tip, tipped, pop
+local DROP, BIG, BREAK = 0.15, 2.6, 1.4
+local burst, pop
+
+local function shatter(a, ox, oy)
+  local s = db.size
+  local sc = s / 200
+  for _, p in ipairs(parts) do
+    if p.needle then
+      p.x, p.y, p.r = ox, oy, -rad(a)
+      p.vx, p.vy, p.spin = (random() - 0.5) * 160 * sc, (220 + random() * 120) * sc, (random() - 0.5) * 24
+      p.wait = 0
+    else
+      local x, y = p.d[2] * s / 512, p.d[3] * s / 512
+      local r = math.sqrt(x * x + y * y) + 1
+      local push = (70 + random() * 110) * sc
+      p.x, p.y, p.r = x + ox, y + oy, 0
+      p.vx = x / r * push + (random() - 0.5) * 50 * sc
+      p.vy = y / r * push * 0.6 + (90 + random() * 140) * sc
+      p.spin = (random() - 0.5) * 9
+      p.wait = random() * 0.05
+    end
+  end
+  burst = t
+  bits:Show()
+  body:SetAlpha(0)
+  jolt = 0
+  click()
+end
+
+local function sweep()
+  burst = nil
+  bits:Hide()
+  body:SetAlpha(1)
+end
 
 local function setOn(v)
   if v == on then return end
   on = v
   if v then
-    drop, landed, shown, idle, tip = t, false, 0, 0, nil
+    drop, landed, shown, idle = t, false, 0, 0
+    sweep()
   else
-    drop, tip = nil, t
+    drop = nil
+    shatter(ang, 0, 0)
+    vis = 0
   end
   f:EnableMouse(v and not db.locked)
 end
@@ -154,7 +211,7 @@ f:SetScript("OnUpdate", function(_, dt)
   if pop then
     local p = t - pop
     setOn(p < 1.2)
-    if p > 1.2 + TIP then pop = nil end
+    if p > 1.2 + BREAK then pop = nil end
   elseif db.mode == "on" then
     setOn(true)
   else
@@ -185,22 +242,27 @@ f:SetScript("OnUpdate", function(_, dt)
   elseif on then
     vis = min(1, vis + dt * 3.5)
   end
-  local lift = 0
-  if tip then
-    local p = min((t - tip) / TIP, 1)
-    local q = p * p
-    local sy = 1 - 0.92 * q
-    shape(1 - 0.18 * q, sy)
-    lift = -db.size * (1 - sy) / 2 + db.size * 0.15 * p
-    vis = min(vis, 1 - p)
-    tipped = true
-    if p >= 1 then tip = nil end
-  elseif tipped then
-    tipped = false
-    shape(1, 1)
-  end
   body:SetScale(k)
-  f:SetAlpha(vis)
+  if burst then
+    local b = t - burst
+    if b > BREAK then
+      sweep()
+    else
+      local g = 1500 * db.size / 200
+      local fade = min(1, max(0, (BREAK - b) / 0.5))
+      for _, p in ipairs(parts) do
+        if b >= p.wait then
+          p.vy = p.vy - g * dt
+          p.x, p.y = p.x + p.vx * dt, p.y + p.vy * dt
+          p.r = p.r + p.spin * dt
+        end
+        p.tx:SetPoint("CENTER", f, "CENTER", p.x, p.y)
+        p.tx:SetRotation(p.r)
+        p.tx:SetAlpha(fade)
+      end
+    end
+  end
+  f:SetAlpha(burst and 1 or vis)
 
   if (not e or landed) and shown ~= stacks and t >= nextStep then
     local dir = stacks > shown and 1 or -1
@@ -229,7 +291,7 @@ f:SetScript("OnUpdate", function(_, dt)
   local sway = sin(t * 2.7) * 1.2 * heat + noise(13, 17, 21) * 0.6 * heat
   sway = sway + (random() - 0.5) * 4 * rattle
   body:ClearAllPoints()
-  body:SetPoint("CENTER", f, "CENTER", dx, dy + lift)
+  body:SetPoint("CENTER", f, "CENTER", dx, dy)
   dial:SetRotation(rad(sway))
 
   if stacks >= MAX and moving then
@@ -281,12 +343,12 @@ local function slash(msg)
     db.sound = not db.sound
     say("Klick-Sound " .. (db.sound and "an" or "aus"))
   elseif cmd == "pop" then
-    setOn(false)
-    tip, vis, pop = nil, 0, t
+    sweep()
+    on, vis, pop = false, 0, t
   elseif cmd == "test" then
     test = t + 15
-    setOn(false)
-    vis = 0
+    sweep()
+    on, vis = false, 0
     say("Probelauf: reinknallen, hochlaufen, Treffer, stehenbleiben, ausblenden")
   else
     say(format("Stacks %d/%d, Tempo %.1f, Modus %s", stacks, MAX, speed, db.mode))
