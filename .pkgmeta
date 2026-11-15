@@ -1,0 +1,4 @@
+package-as: PlainsTacho
+enable-nolib-creation: no
+ignore:
+  - .luacheckrc
