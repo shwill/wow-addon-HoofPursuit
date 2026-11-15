@@ -13,7 +13,7 @@ local defaults = { point = "CENTER", x = 0, y = -180, size = 200, locked = false
 
 local db
 local stacks, speed, moving = 0, 0, false
-local ang, vel, t, idle, fade = CAL[1], 0, 0, 0, 1
+local ang, vel, t, idle, vis, on, ign, ticked = CAL[1], 0, 0, 0, 0, false, nil, 0
 local shown, nextStep, jolt, test = 0, 0, 0, 0
 
 local f = CreateFrame("Frame", "PlainsTachoFrame", UIParent)
@@ -28,7 +28,7 @@ local body = CreateFrame("Frame", nil, f)
 body:SetPoint("CENTER")
 
 local dial = body:CreateTexture(nil, "BACKGROUND")
-dial:SetTexture(MEDIA .. "Dial")
+dial:SetTexture(MEDIA .. "Dial60")
 dial:SetPoint("CENTER")
 
 local glow = body:CreateTexture(nil, "BORDER")
@@ -69,10 +69,11 @@ end
 
 local function readAura()
   if t < test then
-    local e = 11 - (test - t)
-    if e < 5 then stacks = math.floor(e * 6)
-    elseif e < 6.5 then stacks = MAX
-    else stacks = max(0, 24 - math.floor((e - 6.5) * 2)) end
+    local e = 15 - (test - t)
+    if e < 2 then stacks = 1
+    elseif e < 7 then stacks = math.floor(1 + (e - 2) * 5.8)
+    elseif e < 8.5 then stacks = MAX
+    else stacks = max(0, 24 - math.floor((e - 8.5) * 4)) end
     return
   end
   local a = C_UnitAuras.GetPlayerAuraBySpellID(AURA)
@@ -85,7 +86,7 @@ end
 
 local function readSpeed()
   if t < test then
-    moving = 11 - (test - t) < 6.5
+    moving = 15 - (test - t) < 8.5
     speed = moving and BASE * (1 + stacks * 0.02) or 0
     return
   end
@@ -103,10 +104,39 @@ local function noise(a, b, c)
   return sin(t * a) * 0.5 + sin(t * b + 1.3) * 0.3 + sin(t * c + 2.1) * 0.2
 end
 
+local function click()
+  if db.sound and t - ticked > 0.03 then
+    ticked = t
+    PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON, "SFX")
+  end
+end
+
 local function clock(dir)
   vel = vel + dir * 160
   jolt = 1
-  if db.sound then PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON, "SFX") end
+  click()
+end
+
+local IGN = 2
+local function rev(e)
+  if e < 0.25 then return 0 end
+  if e < 0.7 then return sin((e - 0.25) / 0.45 * math.pi) * 0.45 end
+  if e < 0.75 then return 0 end
+  if e < 1.05 then local x = (e - 0.75) / 0.3 return 1 - (1 - x) * (1 - x) end
+  if e < 1.35 then return 1 end
+  if e < 1.95 then local x = (e - 1.35) / 0.6 return 1 - x * x end
+  return 0
+end
+
+local function setOn(v)
+  if v == on then return end
+  on = v
+  if v then
+    ign, shown, idle = t, 0, 0
+  else
+    ign = nil
+  end
+  f:EnableMouse(v and not db.locked)
 end
 
 local acc = 0
@@ -124,14 +154,33 @@ f:SetScript("OnUpdate", function(_, dt)
   local rush = moving and min(speed / (BASE * 1.6), 1.4) or 0
   local heat = moving and (0.15 + 0.85 * fill) or 0
 
-  if shown ~= stacks and t >= nextStep then
+  if db.mode == "on" then
+    setOn(true)
+  else
+    if stacks > 0 or moving then idle = 0 else idle = idle + dt end
+    if not on and stacks > 0 then setOn(true) elseif on and idle > 4 then setOn(false) end
+  end
+  vis = max(0, min(1, vis + dt * (on and 3.5 or -1.4)))
+  f:SetAlpha(vis)
+
+  local e = ign and t - ign
+  local r = 0
+  if e and e >= IGN then ign, e = nil, nil end
+  if e then
+    r = rev(e)
+    local n = math.floor(r * MAX / 2)
+    if n ~= shown then
+      shown = n
+      click()
+    end
+  elseif shown ~= stacks and t >= nextStep then
     local dir = stacks > shown and 1 or -1
     shown = shown + dir
     nextStep = t + (dir > 0 and 0.05 or 0.08)
     clock(dir)
   end
 
-  local goal = target(shown)
+  local goal = e and target(r * MAX) or target(shown)
   vel = vel + ((goal - ang) * 380 - vel * 15) * dt
   ang = ang + vel * dt
   jolt = max(0, jolt - dt * 7)
@@ -145,9 +194,11 @@ f:SetScript("OnUpdate", function(_, dt)
   local amp = db.size * 0.012 * heat * heat * (0.6 + rush * 0.4)
   local bump = (sin(t * 9.5) > 0.85 and 1 or 0) * heat
   local j = jolt * jolt * db.size * 0.012
+  if e then amp = amp + db.size * 0.022 * (0.25 + r) * min(e / 0.2, 1) end
   local dx = noise(23, 31, 47) * amp + (random() - 0.5) * amp * 0.6 + (random() - 0.5) * j
   local dy = noise(19, 29, 43) * amp + bump * amp * 0.8 + j
   local sway = sin(t * 2.7) * 1.2 * heat + noise(13, 17, 21) * 0.6 * heat
+  if e then sway = sway + (random() - 0.5) * 3 * (0.3 + r) end
   body:ClearAllPoints()
   body:SetPoint("CENTER", f, "CENTER", dx, dy)
   dial:SetRotation(rad(sway))
@@ -156,15 +207,6 @@ f:SetScript("OnUpdate", function(_, dt)
     glow:SetAlpha(0.35 + 0.25 * sin(t * 8))
   else
     glow:SetAlpha(max(0, glow:GetAlpha() - dt * 2))
-  end
-
-  if db.mode == "auto" then
-    if stacks > 0 or moving then idle = 0 else idle = idle + dt end
-    local want = idle > 4 and 0 or 1
-    fade = fade + (want - fade) * min(dt * 3, 1)
-    f:SetAlpha(fade)
-  else
-    f:SetAlpha(1)
   end
 end)
 
@@ -178,8 +220,9 @@ f:SetScript("OnDragStop", function(s)
 end)
 
 local function apply()
-  f:EnableMouse(not db.locked)
+  f:EnableMouse(on and not db.locked)
   f:SetShown(db.mode ~= "off")
+  if db.mode == "off" then setOn(false) vis = 0 end
 end
 
 local function say(msg)
@@ -209,9 +252,10 @@ local function slash(msg)
     db.sound = not db.sound
     say("Klick-Sound " .. (db.sound and "an" or "aus"))
   elseif cmd == "test" then
-    test = t + 11
-    idle = 0
-    say("Probelauf: hochlaufen, Treffer, stehenbleiben")
+    test = t + 15
+    setOn(false)
+    vis = 0
+    say("Probelauf: Zündung, hochlaufen, Treffer, stehenbleiben, ausblenden")
   else
     say(format("Stacks %d/%d, Tempo %.1f, Modus %s", stacks, MAX, speed, db.mode))
     say("/tacho lock | size <px> | auto | on | off | sound | reset | test")
