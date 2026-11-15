@@ -241,7 +241,7 @@ f:SetScript("OnUpdate", function(_, dt)
     setOn(true)
   else
     if stacks > 0 or moving or blind then idle = 0 else idle = idle + dt end
-    if not on and stacks > 0 then setOn(true) elseif on and idle > 4 then setOn(false) end
+    if not on and stacks > 0 then setOn(true) elseif on and idle > 1.5 then setOn(false) end
   end
   local e = drop and t - drop
   local k, rattle, r, crank = 1, 0, 0, 0
