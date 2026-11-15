@@ -44,18 +44,23 @@ shadow:SetAlpha(0.55)
 local needle = body:CreateTexture(nil, "ARTWORK", nil, 2)
 needle:SetTexture(MEDIA .. "Needle")
 
+local function shape(sx, sy)
+  local s = db.size
+  local w, h = s * sx, s * sy
+  body:SetSize(w, h)
+  dial:SetSize(w, h)
+  needle:SetSize(w * NEEDLE, h * NEEDLE)
+  needle:SetPoint("CENTER", body, "CENTER", 0, 0)
+  shadow:SetSize(w * NEEDLE, h * NEEDLE)
+  shadow:SetPoint("CENTER", body, "CENTER", w * 0.012, -h * 0.02)
+  glow:SetSize(w * 0.5, h * 0.5)
+  glow:SetPoint("CENTER", body, "CENTER", w * 0.29, -h * 0.2)
+end
+
 local function layout()
   local s = db.size
   f:SetSize(s, s)
-  body:SetSize(s, s)
-  dial:SetSize(s, s)
-  local n = s * NEEDLE
-  needle:SetSize(n, n)
-  needle:SetPoint("CENTER", body, "CENTER", 0, 0)
-  shadow:SetSize(n, n)
-  shadow:SetPoint("CENTER", body, "CENTER", s * 0.012, -s * 0.02)
-  glow:SetSize(s * 0.5, s * 0.5)
-  glow:SetPoint("CENTER", body, "CENTER", s * 0.29, -s * 0.2)
+  shape(1, 1)
   f:ClearAllPoints()
   f:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 end
@@ -117,15 +122,16 @@ local function clock(dir)
   click()
 end
 
-local DROP, BIG = 0.3, 2.6
+local DROP, BIG, TIP = 0.15, 2.6, 0.45
+local tip, tipped
 
 local function setOn(v)
   if v == on then return end
   on = v
   if v then
-    drop, landed, shown, idle = t, false, 0, 0
+    drop, landed, shown, idle, tip = t, false, 0, 0, nil
   else
-    drop = nil
+    drop, tip = nil, t
   end
   f:EnableMouse(v and not db.locked)
 end
@@ -164,12 +170,30 @@ f:SetScript("OnUpdate", function(_, dt)
       click()
     end
     local x = e - DROP
-    k = 1 - 0.07 * math.exp(-9 * x) * math.cos(28 * x)
-    rattle = math.exp(-8 * x)
+    k = 1 - 0.07 * math.exp(-12 * x) * math.cos(32 * x)
+    if x > 0.28 then
+      local y = x - 0.28
+      k = k + 0.018 * math.exp(-7 * y) * sin(17 * y)
+    end
+    rattle = math.exp(-9 * x)
     vis = 1
-    if x > 0.8 then drop = nil end
-  else
-    vis = max(0, min(1, vis + dt * (on and 3.5 or -1.4)))
+    if x > 0.9 then drop = nil end
+  elseif on then
+    vis = min(1, vis + dt * 3.5)
+  end
+  local lift = 0
+  if tip then
+    local p = min((t - tip) / TIP, 1)
+    local q = p * p
+    local sy = 1 - 0.92 * q
+    shape(1 - 0.18 * q, sy)
+    lift = -db.size * (1 - sy) / 2
+    vis = min(vis, 1 - p)
+    tipped = true
+    if p >= 1 then tip = nil end
+  elseif tipped then
+    tipped = false
+    shape(1, 1)
   end
   body:SetScale(k)
   f:SetAlpha(vis)
@@ -201,7 +225,7 @@ f:SetScript("OnUpdate", function(_, dt)
   local sway = sin(t * 2.7) * 1.2 * heat + noise(13, 17, 21) * 0.6 * heat
   sway = sway + (random() - 0.5) * 4 * rattle
   body:ClearAllPoints()
-  body:SetPoint("CENTER", f, "CENTER", dx, dy)
+  body:SetPoint("CENTER", f, "CENTER", dx, dy + lift)
   dial:SetRotation(rad(sway))
 
   if stacks >= MAX and moving then
