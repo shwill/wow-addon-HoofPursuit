@@ -25,7 +25,7 @@ f:RegisterForDrag("LeftButton")
 f:Hide()
 
 local body = CreateFrame("Frame", nil, f)
-body:SetAllPoints()
+body:SetPoint("CENTER")
 
 local dial = body:CreateTexture(nil, "BACKGROUND")
 dial:SetTexture(MEDIA .. "Dial")
@@ -47,6 +47,7 @@ needle:SetTexture(MEDIA .. "Needle")
 local function layout()
   local s = db.size
   f:SetSize(s, s)
+  body:SetSize(s, s)
   dial:SetSize(s, s)
   local n = s * NEEDLE
   needle:SetSize(n, n)
