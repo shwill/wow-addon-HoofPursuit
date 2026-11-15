@@ -1,7 +1,7 @@
-# PlainsTacho
+# Hoof Pursuit
 
 A completely unnecessary wooden speedometer for the Tauren racial **Plainsrunning** (Ebenenlaufen).
-While you run, the buff stacks up to 30 times, +2% movement speed per stack (up to +60%). PlainsTacho shows your speed bonus (0-60%) as a needle on a carved wooden dial:
+While you run, the buff stacks up to 30 times, +2% movement speed per stack (up to +60%). Hoof Pursuit shows your speed bonus (0-60%) as a needle on a carved wooden dial:
 
 - When the first stack appears, the gauge slams onto the screen: it drops in from "above the camera", shrinking while it fades in, hits its spot with a bounce and the needle jumps from the impact. Then the engine starts with sound: the needle twitches while it cranks and revs when it catches.
 - When your stacks run out and you stand still, it bursts into wooden splinters that tumble off the screen.
@@ -19,7 +19,7 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 
 | Command | Effect |
 |---------|--------|
-| `/tacho` | Show current stacks, speed and mode |
+| `/tacho` | Show current stacks, speed and mode (`/hoof` works as an alias everywhere) |
 | `/tacho lock` | Lock or unlock the gauge (drag it with the left mouse button while unlocked) |
 | `/tacho size <px>` | Gauge size in pixels (80-600, default 200) |
 | `/tacho auto` | Slam in with the first stack, fade out after 1.5 s without stacks or movement (default) |
@@ -38,6 +38,6 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 
 ## Install
 
-Copy the `PlainsTacho` folder into `World of Warcraft/_forever_/Interface/AddOns/` and restart the game.
+Copy the `HoofPursuit` folder into `World of Warcraft/_forever_/Interface/AddOns/` and restart the game.
 
-Source: https://github.com/shwill/wow-addon-PlainsTacho
+Source: https://github.com/shwill/wow-addon-HoofPursuit

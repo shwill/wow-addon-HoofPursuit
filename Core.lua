@@ -17,7 +17,7 @@ local stacks, speed, moving, blind, gray = 0, 0, false, false, 0
 local ang, vel, t, idle, vis, on, drop, landed, ticked = CAL[1], 0, 0, 0, 0, false, nil, false, 0
 local shown, nextStep, jolt, test = 0, 0, 0, 0
 
-local f = CreateFrame("Frame", "PlainsTachoFrame", UIParent)
+local f = CreateFrame("Frame", "HoofPursuitFrame", UIParent)
 f:SetFrameStrata("MEDIUM")
 f:SetClampedToScreen(true)
 f:SetMovable(true)
@@ -362,7 +362,7 @@ local function apply()
 end
 
 local function say(msg)
-  print("|cffd9a441PlainsTacho|r " .. msg)
+  print("|cffd9a441Hoof Pursuit|r " .. msg)
 end
 
 local function slash(msg)
@@ -410,8 +410,8 @@ ev:RegisterEvent("ADDON_LOADED")
 ev:RegisterEvent("PLAYER_LOGIN")
 ev:SetScript("OnEvent", function(_, e, arg)
   if e == "ADDON_LOADED" and arg == ADDON then
-    PlainsTachoDB = PlainsTachoDB or {}
-    db = PlainsTachoDB
+    HoofPursuitDB = HoofPursuitDB or {}
+    db = HoofPursuitDB
     for k, v in pairs(defaults) do
       if db[k] == nil then db[k] = v end
     end
@@ -421,8 +421,9 @@ ev:SetScript("OnEvent", function(_, e, arg)
       C_AddOns.DisableAddOn(ADDON, UnitName("player"))
       return
     end
-    SLASH_PLAINSTACHO1 = "/tacho"
-    SlashCmdList.PLAINSTACHO = slash
+    SLASH_HOOFPURSUIT1 = "/tacho"
+    SLASH_HOOFPURSUIT2 = "/hoof"
+    SlashCmdList.HOOFPURSUIT = slash
     f:RegisterUnitEvent("UNIT_COMBAT", "player")
     layout()
     apply()
