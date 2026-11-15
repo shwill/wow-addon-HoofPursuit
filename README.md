@@ -27,6 +27,7 @@ While you run, the buff stacks up to 30 times, +2% movement speed per stack (up 
 | `/tacho sound` | Turn all sounds on or off (clicks, engine start, shatter) |
 | `/tacho test` | 15 s demo: slam in, build up to 30, take a hit, stand still, fade out |
 | `/tacho pop` | Just the animations: slam in, engine start, shatter |
+| `/tacho film` | Movie mode: the gauge stays visible when you hide the UI with Alt+Z |
 | `/tacho reset` | Reset position, size and settings |
 
 ## Caveats

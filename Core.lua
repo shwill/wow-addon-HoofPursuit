@@ -10,7 +10,7 @@ local NEEDLE = 800 / 1254
 
 local sin, rad, min, max, random = math.sin, math.rad, math.min, math.max, math.random
 
-local defaults = { point = "CENTER", x = 0, y = -180, size = 200, locked = false, mode = "auto", sound = true }
+local defaults = { point = "CENTER", x = 0, y = -180, size = 200, locked = false, mode = "auto", sound = true, film = false }
 
 local db
 local stacks, speed, moving, blind, gray = 0, 0, false, false, 0
@@ -72,7 +72,19 @@ do
   parts[#parts + 1] = { tx = tx, needle = true }
 end
 
+local function attach()
+  if db.film then
+    f:SetParent(WorldFrame)
+    f:SetScale(UIParent:GetEffectiveScale() / WorldFrame:GetEffectiveScale())
+  else
+    f:SetParent(UIParent)
+    f:SetScale(1)
+  end
+  f:SetFrameStrata("MEDIUM")
+end
+
 local function layout()
+  attach()
   local s = db.size
   f:SetSize(s, s)
   body:SetSize(s, s)
@@ -372,6 +384,10 @@ local function slash(msg)
     layout()
     apply()
     say("zurückgesetzt")
+  elseif cmd == "film" then
+    db.film = not db.film
+    layout()
+    say(db.film and "Filmmodus an: Alt+Z blendet alles außer dem Tacho aus" or "Filmmodus aus")
   elseif cmd == "sound" then
     db.sound = not db.sound
     say("Klick-Sound " .. (db.sound and "an" or "aus"))
@@ -385,7 +401,7 @@ local function slash(msg)
     say("Probelauf: reinknallen, hochlaufen, Treffer, stehenbleiben, ausblenden")
   else
     say(format("Stacks %d/%d, Tempo %.1f, Modus %s", stacks, MAX, speed, db.mode))
-    say("/tacho lock | size <px> | auto | on | off | sound | reset | test | pop")
+    say("/tacho lock | size <px> | auto | on | off | sound | film | reset | test | pop")
   end
 end
 
