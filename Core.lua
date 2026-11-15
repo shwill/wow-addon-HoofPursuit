@@ -25,6 +25,9 @@ f:EnableMouse(true)
 f:RegisterForDrag("LeftButton")
 f:Hide()
 
+local cast = f:CreateTexture(nil, "BACKGROUND")
+cast:SetTexture(MEDIA .. "Drop2")
+
 local body = CreateFrame("Frame", nil, f)
 body:SetPoint("CENTER")
 
@@ -310,6 +313,11 @@ f:SetScript("OnUpdate", function(_, dt)
   sway = sway + (random() - 0.5) * (4 * rattle + 2.5 * r)
   body:ClearAllPoints()
   body:SetPoint("CENTER", f, "CENTER", dx, dy)
+  local depth = 1 + (k - 1) * 5
+  local cs = db.size * 512 / 360 * k
+  cast:SetSize(cs, cs)
+  cast:SetPoint("CENTER", f, "CENTER", dx + db.size * 0.07 * depth, dy - db.size * 0.1 * depth)
+  cast:SetAlpha(burst and max(0, 1 - (t - burst) / 0.25) or 1 / (1 + (k - 1) * 2))
   dial:SetRotation(rad(sway))
 
   if stacks >= MAX and moving then
